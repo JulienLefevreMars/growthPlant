@@ -142,7 +142,13 @@ if __name__ == '__main__':
     fig=plt.figure(figsize=(15,12))
     ani = animation.ArtistAnimation(fig, ims, interval=200, blit=True,
                                     repeat_delay=1000)
+
+    #plt.rcParams['animation.ffmpeg_path'] = '/home/julienlefevre/Documents/Softs/anaconda3/bin/ffmpeg'
+    #ani.save('demo1.avi',writer=writer)
+    #ani.save('demo1.gif', writer='imagemagick')
+
     plt.show()
+
 
     # Film avant recalage
     ims =[]
@@ -155,4 +161,38 @@ if __name__ == '__main__':
     fig=plt.figure(figsize=(15,12))
     ani = animation.ArtistAnimation(fig, ims, interval=200, blit=True,
                                     repeat_delay=1000)
+    #ani.save('demo2.gif', writer='imagemagick')
     plt.show()
+
+    # # Sauver les images pour faire un film
+    # folderToSave='/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
+    # cpt=1
+    # nzeros=np.floor(np.log10(NbImages))+1
+    # for i in range(len(allRMSE)):
+    #     if distanceIdentity[i]<0.1:
+    #         cv2.imwrite(folderToSave+'photo'+str(cpt).zfill(int(nzeros)) +'.jpg', allImages[i])
+    #         cpt=cpt+1
+
+    # Sauver les images pour faire un film: en couleur
+    folderToSave='/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
+    cpt=1
+    nzeros=np.floor(np.log10(NbImages))+1
+    for i in range(len(allRMSE)):
+        if distanceIdentity[i]<0.1:
+            img2 = cv2.imread(folder + files[i])
+            img2 = img2[::step, ::step]
+            tmpImage=cv2.warpPerspective(img2, allHomographies[i], dsize=(img2.shape[1], img2.shape[0]))
+            cv2.imwrite(folderToSave+'photo'+str(cpt).zfill(int(nzeros)) +'.jpg', tmpImage)
+            cpt=cpt+1
+
+    # Film sans recalage
+
+    folderToSave = '/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
+    cpt = 1
+    nzeros = np.floor(np.log10(NbImages)) + 1
+    for i in range(len(allRMSE)):
+        if distanceIdentity[i] < 0.1:
+            img2 = cv2.imread(folder + files[i])
+            img2 = img2[::step, ::step]
+            cv2.imwrite(folderToSave + 'photo' + str(cpt).zfill(int(nzeros)) + '.jpg', img2)
+            cpt = cpt + 1
