@@ -56,6 +56,15 @@ def register2Images(img1,img2,ratio_Lowe=0.75):
 
     return (img1warped,M,len(good))
 
+def hisEqulColor(img):
+    ycrcb=cv2.cvtColor(img,cv2.COLOR_BGR2YCR_CB)
+    channels=cv2.split(ycrcb)
+    print(len(channels))
+    cv2.equalizeHist(channels[0],channels[0])
+    cv2.merge(channels,ycrcb)
+    cv2.cvtColor(ycrcb,cv2.COLOR_YCR_CB2BGR,img)
+    return img
+
 
 ########
 #      #
@@ -196,3 +205,8 @@ if __name__ == '__main__':
             img2 = img2[::step, ::step]
             cv2.imwrite(folderToSave + 'photo' + str(cpt).zfill(int(nzeros)) + '.jpg', img2)
             cpt = cpt + 1
+
+    # # Egalisation histogramme
+    # img2 = cv2.imread(folder + files[0])
+    # img2 = cv2.imread(folder + files[18])
+    # plt.imshow(cv2.cvtColor(hisEqulColor(img2), cv2.COLOR_BGR2RGB))
