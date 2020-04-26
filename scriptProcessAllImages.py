@@ -183,7 +183,12 @@ if __name__ == '__main__':
     #         cpt=cpt+1
 
     # Sauver les images pour faire un film: en couleur
-    folderToSave='/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
+    #folderToSave='/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
+    folderToSave='Videos/'
+    try:
+        os.mkdir(folderToSave)
+    except:
+        print('folder ' + folderToSave + ' already exists')
     cpt=1
     nzeros=np.floor(np.log10(NbImages))+1
     for i in range(len(allRMSE)):
@@ -194,9 +199,12 @@ if __name__ == '__main__':
             cv2.imwrite(folderToSave+'photo'+str(cpt).zfill(int(nzeros)) +'.jpg', tmpImage)
             cpt=cpt+1
 
+    os.system('ffmpeg -f image2 -framerate 5 -i '+folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+'RegistrationOn.mp4')
+
+
     # Film sans recalage
 
-    folderToSave = '/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
+    #folderToSave = '/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
     cpt = 1
     nzeros = np.floor(np.log10(NbImages)) + 1
     for i in range(len(allRMSE)):
@@ -205,6 +213,8 @@ if __name__ == '__main__':
             img2 = img2[::step, ::step]
             cv2.imwrite(folderToSave + 'photo' + str(cpt).zfill(int(nzeros)) + '.jpg', img2)
             cpt = cpt + 1
+
+    os.system('ffmpeg -f image2 -framerate 5 -i ' +folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+ 'RegistrationOff.mp4')
 
     # # Egalisation histogramme
     # img2 = cv2.imread(folder + files[0])
