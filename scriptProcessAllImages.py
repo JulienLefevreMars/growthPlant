@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import cm
 import matplotlib.animation as animation
+import histogram_matching as hm
 
 def register2Images(img1,img2,ratio_Lowe=0.75):
     # SIFT descriptors
@@ -65,6 +66,10 @@ def hisEqulColor(img):
     cv2.cvtColor(ycrcb,cv2.COLOR_YCR_CB2BGR,img)
     return img
 
+def histogram_matching_rgb(img2,img_ref):
+    reference_histogram = hm.ExactHistogramMatcher.get_histogram(img_ref)
+    new_img2 = hm.ExactHistogramMatcher.match_image_to_histogram(img2, reference_histogram)
+    return new_img2
 
 ########
 #      #
@@ -87,6 +92,11 @@ if __name__ == '__main__':
     files.sort()
     NbImages=len(files)
 
+    # Histogram specification
+    histSpec=True
+    keyWord="NoHistSpec"
+    if histSpec:
+        keyWord="HistSpec"
 
     # Reference Image
     if view=='Vue2':
@@ -201,19 +211,23 @@ if __name__ == '__main__':
     cpt=1
 
     os.system('rm ' +folderToSave + '*.jpg')
-    os.system('rm ' +folderToSave + 'RegistrationOn'+view+'.mp4')
+    os.system('rm ' +folderToSave + 'RegistrationOn'+view+keyWord+'.mp4')
     os.system('rm ' +folderToSave + 'RegistrationOff' + view + '.mp4')
+    img_ref = cv2.imread(folder + files[idx_ref])
+    img_ref = img_ref[::step, ::step]
 
     nzeros=np.floor(np.log10(NbImages))+1
     for i in range(len(allRMSE)):
         if distanceIdentity[i]<threshold:
             img2 = cv2.imread(folder + files[i])
             img2 = img2[::step, ::step]
+            if histSpec:
+                img2 = histogram_matching_rgb(img2, img_ref)
             tmpImage=cv2.warpPerspective(img2, allHomographies[i], dsize=(img2.shape[1], img2.shape[0]))
             cv2.imwrite(folderToSave+'photo'+str(cpt).zfill(int(nzeros)) +'.jpg', tmpImage)
             cpt=cpt+1
 
-    os.system('ffmpeg -f image2 -framerate 5 -i '+folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+'RegistrationOn'+view +'.mp4')
+    os.system('ffmpeg -f image2 -framerate 4 -i '+folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+'RegistrationOn'+view +keyWord+'.mp4')
 
 
     # Movie without registration
@@ -228,7 +242,7 @@ if __name__ == '__main__':
             cv2.imwrite(folderToSave + 'photo' + str(cpt).zfill(int(nzeros)) + '.jpg', img2)
             cpt = cpt + 1
 
-    os.system('ffmpeg -f image2 -framerate 5 -i ' +folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+ 'RegistrationOff'+view+ '.mp4')
+    os.system('ffmpeg -f image2 -framerate 4 -i ' +folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+ 'RegistrationOff'+view+ '.mp4')
 
     # # Egalisation histogramme
     # img2 = cv2.imread(folder + files[0])
