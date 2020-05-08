@@ -75,11 +75,10 @@ def hisEqulColor(img):
 if __name__ == '__main__':
 
     # Data
-    folder='/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Vue2/'
+    view = 'Vue2'
+    folder='/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/'+view +'/'
 
     import os
-
-    folder = '/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Vue2/'
 
     for root, dirs, files in os.walk(folder):
         for filename in files:
@@ -90,10 +89,14 @@ if __name__ == '__main__':
 
 
     # Reference Image
-    # Choice1
-    #img_ref = cv2.imread(folder + files[0], 0)
-    #img_ref = img_ref[1000::2, 0:3000:2]
-    idx_ref=2
+    if view=='Vue2':
+        idx_ref=2
+        threshold=0.1
+    else:
+        idx_ref=3
+        thresdhold=1
+
+
     step=4
     img_ref=cv2.imread(folder + files[idx_ref], 0)
     img_ref = img_ref[::step,::step]
@@ -103,18 +106,21 @@ if __name__ == '__main__':
     allNbGood=np.zeros((NbImages-1,))
     allRMSE=np.zeros((NbImages-1,2))
 
-    #for i in range(1):
+    cpt=0
     for i in range(NbImages):
         img2 = cv2.imread(folder + files[i], 0)
         img2 = img2[::step, ::step]
-
-        (img2warped,M,nbGood)=register2Images(img2, img_ref, ratio_Lowe=0.75)
-        allImages.append(img2warped)
-        allHomographies.append(M)
-        allNbGood[i]=nbGood
-        allRMSE[i,0]=np.mean(np.abs(-np.int32(img_ref)+np.int32(img2warped)))
-        allRMSE[i,1]=np.mean(np.abs(-np.int32(img_ref)+np.int32(img2)))
-        print('Etape '+str(i) + ', RMSE, after/before, '+ str(allRMSE[i,:]))
+        try:
+            (img2warped,M,nbGood)=register2Images(img2, img_ref, ratio_Lowe=0.75)
+            allImages.append(img2warped)
+            allHomographies.append(M)
+            allNbGood[cpt]=nbGood
+            allRMSE[cpt,0]=np.mean(np.abs(-np.int32(img_ref)+np.int32(img2warped)))
+            allRMSE[cpt,1]=np.mean(np.abs(-np.int32(img_ref)+np.int32(img2)))
+            print('Step '+str(cpt) + ', RMSE, after/before, '+ str(allRMSE[cpt,:]))
+            cpt=cpt+1
+        except:
+            print('Registration failed')
 
     # meanImage=np.zeros(img_ref.shape,dtype=np.int32)
     #
@@ -128,7 +134,7 @@ if __name__ == '__main__':
 
     # On garde les images où RMSE[i,0]<RMSE[i,1] => pas un bon critère
 
-    # Homographies proche de identité + translation
+    # Homographies close to identity + translation
 
     distanceIdentity=np.zeros((len(allHomographies,)))
     translation=np.zeros((len(allHomographies),2))
@@ -136,10 +142,10 @@ if __name__ == '__main__':
         distanceIdentity[i]=np.sum((allHomographies[i][0:2, 0:2] - np.eye(2, 2)) ** 2)
         translation[i,:]=allHomographies[i][0:2,2].transpose()
 
-    # Film après recalage
+    # Movie after registration
     ims = []
     for i in range(len(allRMSE)):
-        if distanceIdentity[i]<0.1:
+        if distanceIdentity[i]<threshold:
             im = plt.imshow(allImages[i], 'gray',animated=True)
         # if (allRMSE[i,0]<allRMSE[i,1]):
         #     im.figure.set_facecolor('red')
@@ -159,7 +165,7 @@ if __name__ == '__main__':
     plt.show()
 
 
-    # Film avant recalage
+    # Movie before registration
     ims =[]
     for i in range(NbImages):
         img2 = cv2.imread(folder + files[i], 0)
@@ -184,37 +190,45 @@ if __name__ == '__main__':
 
     # Sauver les images pour faire un film: en couleur
     #folderToSave='/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
+
+
+
     folderToSave='Videos/'
     try:
         os.mkdir(folderToSave)
     except:
         print('folder ' + folderToSave + ' already exists')
     cpt=1
+
+    os.system('rm ' +folderToSave + '*.jpg')
+    os.system('rm ' +folderToSave + 'RegistrationOn'+view+'.mp4')
+    os.system('rm ' +folderToSave + 'RegistrationOff' + view + '.mp4')
+
     nzeros=np.floor(np.log10(NbImages))+1
     for i in range(len(allRMSE)):
-        if distanceIdentity[i]<0.1:
+        if distanceIdentity[i]<threshold:
             img2 = cv2.imread(folder + files[i])
             img2 = img2[::step, ::step]
             tmpImage=cv2.warpPerspective(img2, allHomographies[i], dsize=(img2.shape[1], img2.shape[0]))
             cv2.imwrite(folderToSave+'photo'+str(cpt).zfill(int(nzeros)) +'.jpg', tmpImage)
             cpt=cpt+1
 
-    os.system('ffmpeg -f image2 -framerate 5 -i '+folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+'RegistrationOn.mp4')
+    os.system('ffmpeg -f image2 -framerate 5 -i '+folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+'RegistrationOn'+view +'.mp4')
 
 
-    # Film sans recalage
+    # Movie without registration
 
     #folderToSave = '/home/julienlefevre/ownCloud/Documents/Misc/PhotosCroissance/Videos/'
     cpt = 1
     nzeros = np.floor(np.log10(NbImages)) + 1
     for i in range(len(allRMSE)):
-        if distanceIdentity[i] < 0.1:
+        if distanceIdentity[i] < threshold:
             img2 = cv2.imread(folder + files[i])
             img2 = img2[::step, ::step]
             cv2.imwrite(folderToSave + 'photo' + str(cpt).zfill(int(nzeros)) + '.jpg', img2)
             cpt = cpt + 1
 
-    os.system('ffmpeg -f image2 -framerate 5 -i ' +folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+ 'RegistrationOff.mp4')
+    os.system('ffmpeg -f image2 -framerate 5 -i ' +folderToSave+ 'photo%2d.jpg -r 5 '+folderToSave+ 'RegistrationOff'+view+ '.mp4')
 
     # # Egalisation histogramme
     # img2 = cv2.imread(folder + files[0])
